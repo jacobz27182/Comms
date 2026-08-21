@@ -3,8 +3,10 @@
 #include <iostream>
 
 constexpr int PORT = 55555;
-constexpr char DEST_IP_ADDRESS[]  = "127.0.0.1"; // For now lets just use the local host address
+constexpr char DEST_IP_ADDRESS[] = "127.0.0.1"; // For now lets just use the local host address
 constexpr int MAX_BUFFER_SIZE = 200;
+
+
 //const = once it is assigned a value, it cannot be changed. It is a way to create a constant variable that cannot be modified after initialization.
 //constexpr = the compiler has to know the value of the variable at compile time. It is a way to create a constant variable that can be used in compile-time expressions.
 
@@ -67,7 +69,21 @@ int main() {
 	service.sin_family = AF_INET;
 
 	// The InetPton function converts an IP address in string format to a binary format. It takes three parameters: the address family (AF_INET for IPv4), the string representation of the IP address, and a pointer to a variable that will receive the binary representation of the IP address.
-	InetPton(AF_INET, (PCWSTR)DEST_IP_ADDRESS, &service.sin_addr.s_addr);
+	int res = InetPtonA(AF_INET, DEST_IP_ADDRESS, &service.sin_addr.s_addr);
+
+	if (res == 0) {
+		std::cout << "Invalid IP address format!" << std::endl;
+		WSACleanup();
+		return 0;
+	}
+	else if (res == -1) {
+		std::cout << "InetPton failed: " << WSAGetLastError() << std::endl;
+		WSACleanup();
+		return 0;
+	}
+	else {
+		std::cout << "IP address is OK!" << std::endl;
+	}
 
 	//htons is a function that converts a 16-bit number from host byte order to network byte order.
 	service.sin_port = htons(PORT);  // Choose a port number
