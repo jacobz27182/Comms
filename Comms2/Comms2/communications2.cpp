@@ -22,13 +22,12 @@ int main() {
 
 	if (wsaerr != 0) {
 		if (DEBUG) {
-			cout << "The Winsock dll not found!" << std::endl;
+			cout << "The Winsock dll not found!" << endl;
 		}
 		return 1;
-	}
-	else {
+	} else {
 		if (DEBUG) {
-			cout << "The Winsock dll found" << std::endl;
+			cout << "The Winsock dll found" << endl;
 		}
 	}
 
@@ -40,14 +39,13 @@ int main() {
 	// Check for socket creation success
 	if (clientSocket == INVALID_SOCKET) {
 		if (DEBUG) {
-			std::cout << "Error at socket(): " << WSAGetLastError() << std::endl;
+			cout << "Error at socket(): " << WSAGetLastError() << endl;
 		}
 		WSACleanup();
 		return 0;
-	}
-	else {
+	} else {
 		if (DEBUG) {
-			std::cout << "Socket is OK!" << std::endl;
+			cout << "Socket is OK!" << endl;
 		}
 	}
 
@@ -61,21 +59,19 @@ int main() {
 
 	if (res == 0) {
 		if (DEBUG) {
-			std::cout << "Invalid IP address format!" << std::endl;
+			cout << "Invalid IP address format!" << endl;
 		}
 		WSACleanup();
 		return 0;
-	}
-	else if (res == -1) {
+	} else if (res == -1) {
 		if (DEBUG) {
-			std::cout << "InetPton failed: " << WSAGetLastError() << std::endl;
+			cout << "InetPton failed: " << WSAGetLastError() << endl;
 		}
 		WSACleanup();
 		return 0;
-	}
-	else {
+	} else {
 		if (DEBUG) {
-			std::cout << "IP address is OK!" << std::endl;
+			cout << "IP address is OK!" << endl;
 		}
 	}
 
@@ -84,15 +80,14 @@ int main() {
 	//Connect to server.
 	if (connect(clientSocket, reinterpret_cast<SOCKADDR*>(&clientService), sizeof(clientService)) == SOCKET_ERROR) { 
 		if (DEBUG) {
-			std::cout << "Client: connect() - Failed to connect: " << WSAGetLastError() << std::endl;
+			cout << "Client: connect() - Failed to connect: " << WSAGetLastError() << endl;
 		}
 		WSACleanup();
 		return 0;
-	}
-	else {
+	} else {
 		if (DEBUG) {
-			std::cout << "Client: Connect() is OK!" << std::endl;
-			std::cout << "Client: Can start sending and receiving data..." << std::endl;
+			cout << "Client: Connect() is OK!" << endl;
+			cout << "Client: Can start sending and receiving data..." << endl;
 		}
 	}
 
@@ -101,8 +96,8 @@ int main() {
 		// Sending data to the server
 		char buffer[MAX_BUFFER_SIZE];
 
-		std::cout << "Enter the message: ";
-		std::cin.getline(buffer, MAX_BUFFER_SIZE);
+		cout << "Enter the message: ";
+		cin.getline(buffer, MAX_BUFFER_SIZE);
 
 		//exit command
 		if (strcmp(buffer, "\\exit") == 0) {
@@ -112,13 +107,12 @@ int main() {
 		int sbyteCount = send(clientSocket, buffer, MAX_BUFFER_SIZE, 0);
 		if (sbyteCount == SOCKET_ERROR) {
 			if (DEBUG) {
-				std::cout << "Client send error: " << WSAGetLastError() << std::endl;
+				cout << "Client send error: " << WSAGetLastError() << endl;
 			}
 			return -1;
-		}
-		else {
+		} else {
 			if (DEBUG) {
-				std::cout << "Client: Sent " << sbyteCount << " bytes" << std::endl;
+				cout << "Client: Sent " << sbyteCount << " bytes" << endl;
 			}
 		}
 		
@@ -131,12 +125,11 @@ int main() {
 		int rbyteCount = recv(clientSocket, receiveBuffer, MAX_BUFFER_SIZE, 0);
 		if (rbyteCount < 0) {
 			if (DEBUG) {
-				std::cout << "Client recv error: " << WSAGetLastError() << std::endl;
+				cout << "Client recv error: " << WSAGetLastError() << endl;
 			}
 			return 0;
-		}
-		else {
-			std::cout << "Client: Received data: " << receiveBuffer << std::endl;
+		} else {
+			cout << "Client: Received data: " << receiveBuffer << endl;
 		}
 	}
 

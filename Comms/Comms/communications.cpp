@@ -33,12 +33,12 @@ int main() {
 
 	if (wsaerr != 0) {
 		if (DEBUG) {
-			cout << "The Winsock dll not found!" << std::endl;
+			cout << "The Winsock dll not found!" << endl;
 		}
 		return 1;
 	} else {
 		if (DEBUG) {
-			cout << "The Winsock dll found!" << std::endl;
+			cout << "The Winsock dll found!" << endl;
 		}
 	}
 
@@ -58,14 +58,13 @@ int main() {
 	// Check for socket creation success
 	if (serverSocket == INVALID_SOCKET) {
 		if (DEBUG) {
-			std::cout << "Error at socket(): " << WSAGetLastError() << std::endl;
+			cout << "Error at socket(): " << WSAGetLastError() << endl;
 		}
 		WSACleanup();
 		return 0;
-	}
-	else {
+	} else {
 		if (DEBUG) {
-			std::cout << "socket() is OK!" << std::endl;
+			cout << "socket() is OK!" << endl;
 		}
 	}
 
@@ -82,21 +81,19 @@ int main() {
 
 	if (res == 0) {
 		if (DEBUG) {
-			std::cout << "Invalid IP address format!" << std::endl;
+			cout << "Invalid IP address format!" << endl;
 		}
 		WSACleanup();
 		return 0;
-	}
-	else if (res == -1) {
+	} else if (res == -1) {
 		if (DEBUG) {
-			std::cout << "InetPton failed: " << WSAGetLastError() << std::endl;
+			cout << "InetPton failed: " << WSAGetLastError() << endl;
 		}
 		WSACleanup();
 		return 0;
-	}
-	else {
+	} else {
 		if (DEBUG) {
-			std::cout << "IP address is OK!" << std::endl;
+			cout << "IP address is OK!" << endl;
 		}
 	}
 
@@ -106,26 +103,24 @@ int main() {
 	// Use the bind function
 	if (bind(serverSocket, reinterpret_cast<SOCKADDR*>(&service), sizeof(service)) == SOCKET_ERROR) {
 		if (DEBUG) {
-			std::cout << "bind() failed: " << WSAGetLastError() << std::endl;
+			cout << "bind() failed: " << WSAGetLastError() << endl;
 		}
 		closesocket(serverSocket);
 		WSACleanup();
 		return 0;
-	}
-	else {
+	} else {
 		if (DEBUG) {
-			std::cout << "bind() is OK!" << std::endl;
+			cout << "bind() is OK!" << endl;
 		}
 	}
 
 	// Listen allows the socket to accept incoming connections (TCP handshakes). The second parameter specifies the maximum length of the queue of pending connections.
 	if (listen(serverSocket, 1) == SOCKET_ERROR) {
 		if (DEBUG) {
-			std::cout << "listen(): Error listening on socket: " << WSAGetLastError() << std::endl;
+			cout << "listen(): Error listening on socket: " << WSAGetLastError() << endl;
 		}
-	}
-	else {
-		std::cout << "Awaiting new connection..." << std::endl;
+	} else {
+		cout << "Awaiting new connection..." << endl;
 	}
 
 
@@ -139,14 +134,13 @@ int main() {
 	// Check for successful connection
 	if (acceptSocket == INVALID_SOCKET) {
 		if (DEBUG) {
-			std::cout << "accept failed: " << WSAGetLastError() << std::endl;
+			cout << "accept failed: " << WSAGetLastError() << endl;
 		}
 		WSACleanup();
 		return -1;
-	}
-	else {
+	} else {
 		if (DEBUG) {
-			std::cout << "accept() is OK!" << std::endl;
+			cout << "accept() is OK!" << endl;
 		}
 	}
 
@@ -160,32 +154,31 @@ int main() {
 			int errorCode = WSAGetLastError();
 			if (errorCode == WSAECONNABORTED) { //This is our backup option
 				if (DEBUG) {
-					std::cout << "Client disconnected." << std::endl;
+					cout << "Client disconnected." << endl;
 				}
 				break; // Exit the loop if the client disconnected
 			}
 			else
 			if (DEBUG) {
-				std::cout << "Server recv error: " << errorCode << std::endl;
+				cout << "Server recv error: " << errorCode << endl;
 			}
 			return 0;
-		}
-		else {
+		} else {
 			if (DEBUG) {
-				std::cout << "Server: Received " << rbyteCount << " bytes" << std::endl;
+				cout << "Server: Received " << rbyteCount << " bytes" << endl;
 			}
-			std::cout << "Received data: " << receiveBuffer << std::endl;
+			cout << "Received data: " << receiveBuffer << endl;
 		}
 
 		if (strcmp(receiveBuffer, "\\exit") == 0) {
-			std::cout << "Client requested to exit." << std::endl;
+			cout << "Client requested to exit." << endl;
 			break; // Exit the loop if the client sent the exit command
 		}
 
 		// Send a response to the client
 		char buffer[MAX_BUFFER_SIZE];
-		std::cout << "Enter the message: ";
-		std::cin.getline(buffer, MAX_BUFFER_SIZE);
+		cout << "Enter the message: ";
+		cin.getline(buffer, MAX_BUFFER_SIZE);
 
 		//exit command
 		if (strcmp(buffer, "\\exit") == 0) {
@@ -196,13 +189,12 @@ int main() {
 
 		if (sbyteCount == SOCKET_ERROR) {
 			if (DEBUG) {
-				std::cout << "Server send error: " << WSAGetLastError() << std::endl;
+				cout << "Server send error: " << WSAGetLastError() << endl;
 			}
 			return -1;
-		}
-		else {
+		} else {
 			if (DEBUG) {
-				std::cout << "Server: Sent " << sbyteCount << " bytes" << std::endl;
+				cout << "Server: Sent " << sbyteCount << " bytes" << endl;
 			}
 		}
 	}
