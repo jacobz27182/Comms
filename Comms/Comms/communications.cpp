@@ -1,10 +1,12 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <iostream>
+#include <string.h>
 
 constexpr int PORT = 55555;
 constexpr char DEST_IP_ADDRESS[] = "127.0.0.1"; // For now lets just use the local host address
 constexpr int MAX_BUFFER_SIZE = 200;
+constexpr bool DEBUG = true;
 
 
 //const = once it is assigned a value, it cannot be changed. It is a way to create a constant variable that cannot be modified after initialization.
@@ -30,11 +32,14 @@ int main() {
 
 
 	if (wsaerr != 0) {
-		cout << "The Winsock dll not found!" << std::endl;
+		if (DEBUG) {
+			cout << "The Winsock dll not found!" << std::endl;
+		}
 		return 1;
 	} else {
-		cout << "The Winsock dll found" << std::endl;
-		//cout << "The status: " << wsaData.szSystemStatus << std::endl;
+		if (DEBUG) {
+			cout << "The Winsock dll found!" << std::endl;
+		}
 	}
 
 	// Create a socket
@@ -52,12 +57,16 @@ int main() {
 
 	// Check for socket creation success
 	if (serverSocket == INVALID_SOCKET) {
-		std::cout << "Error at socket(): " << WSAGetLastError() << std::endl;
+		if (DEBUG) {
+			std::cout << "Error at socket(): " << WSAGetLastError() << std::endl;
+		}
 		WSACleanup();
 		return 0;
 	}
 	else {
-		std::cout << "Socket is OK!" << std::endl;
+		if (DEBUG) {
+			std::cout << "socket() is OK!" << std::endl;
+		}
 	}
 
 	// Bind the socket to an IP address and port number
@@ -72,17 +81,23 @@ int main() {
 	int res = InetPtonA(AF_INET, DEST_IP_ADDRESS, &service.sin_addr.s_addr);
 
 	if (res == 0) {
-		std::cout << "Invalid IP address format!" << std::endl;
+		if (DEBUG) {
+			std::cout << "Invalid IP address format!" << std::endl;
+		}
 		WSACleanup();
 		return 0;
 	}
 	else if (res == -1) {
-		std::cout << "InetPton failed: " << WSAGetLastError() << std::endl;
+		if (DEBUG) {
+			std::cout << "InetPton failed: " << WSAGetLastError() << std::endl;
+		}
 		WSACleanup();
 		return 0;
 	}
 	else {
-		std::cout << "IP address is OK!" << std::endl;
+		if (DEBUG) {
+			std::cout << "IP address is OK!" << std::endl;
+		}
 	}
 
 	//htons is a function that converts a 16-bit number from host byte order to network byte order.
@@ -90,21 +105,27 @@ int main() {
 
 	// Use the bind function
 	if (bind(serverSocket, reinterpret_cast<SOCKADDR*>(&service), sizeof(service)) == SOCKET_ERROR) {
-		std::cout << "bind() failed: " << WSAGetLastError() << std::endl;
+		if (DEBUG) {
+			std::cout << "bind() failed: " << WSAGetLastError() << std::endl;
+		}
 		closesocket(serverSocket);
 		WSACleanup();
 		return 0;
 	}
 	else {
-		std::cout << "bind() is OK!" << std::endl;
+		if (DEBUG) {
+			std::cout << "bind() is OK!" << std::endl;
+		}
 	}
 
 	// Listen allows the socket to accept incoming connections (TCP handshakes). The second parameter specifies the maximum length of the queue of pending connections.
 	if (listen(serverSocket, 1) == SOCKET_ERROR) {
-		std::cout << "listen(): Error listening on socket: " << WSAGetLastError() << std::endl;
+		if (DEBUG) {
+			std::cout << "listen(): Error listening on socket: " << WSAGetLastError() << std::endl;
+		}
 	}
 	else {
-		std::cout << "listen() is OK! I'm waiting for new connections..." << std::endl;
+		std::cout << "Awaiting new connection..." << std::endl;
 	}
 
 
@@ -117,38 +138,74 @@ int main() {
 
 	// Check for successful connection
 	if (acceptSocket == INVALID_SOCKET) {
-		std::cout << "accept failed: " << WSAGetLastError() << std::endl;
+		if (DEBUG) {
+			std::cout << "accept failed: " << WSAGetLastError() << std::endl;
+		}
 		WSACleanup();
 		return -1;
 	}
 	else {
-		std::cout << "accept() is OK!" << std::endl;
+		if (DEBUG) {
+			std::cout << "accept() is OK!" << std::endl;
+		}
 	}
 
-	// Receive data from the client
-	char receiveBuffer[MAX_BUFFER_SIZE];
-	int rbyteCount = recv(acceptSocket, receiveBuffer, MAX_BUFFER_SIZE, 0);
 
-	if (rbyteCount < 0) {
-		std::cout << "Server recv error: " << WSAGetLastError() << std::endl;
-		return 0;
-	}
-	else {
-		std::cout << "Received data: " << receiveBuffer << std::endl;
-	}
+	while (1) {
+		// Receive data from the client
+		char receiveBuffer[MAX_BUFFER_SIZE];
+		int rbyteCount = recv(acceptSocket, receiveBuffer, MAX_BUFFER_SIZE, 0);
 
-	// Send a response to the client
-	char buffer[MAX_BUFFER_SIZE];
-	std::cout << "Enter the message: ";
-	std::cin.getline(buffer, MAX_BUFFER_SIZE);
-	int sbyteCount = send(acceptSocket, buffer, MAX_BUFFER_SIZE, 0);
+		if (rbyteCount < 0) {
+			int errorCode = WSAGetLastError();
+			if (errorCode == WSAECONNABORTED) { //This is our backup option
+				if (DEBUG) {
+					std::cout << "Client disconnected." << std::endl;
+				}
+				break; // Exit the loop if the client disconnected
+			}
+			else
+			if (DEBUG) {
+				std::cout << "Server recv error: " << errorCode << std::endl;
+			}
+			return 0;
+		}
+		else {
+			if (DEBUG) {
+				std::cout << "Server: Received " << rbyteCount << " bytes" << std::endl;
+			}
+			std::cout << "Received data: " << receiveBuffer << std::endl;
+		}
 
-	if (sbyteCount == SOCKET_ERROR) {
-		std::cout << "Server send error: " << WSAGetLastError() << std::endl;
-		return -1;
+		if (strcmp(receiveBuffer, "\\exit") == 0) {
+			std::cout << "Client requested to exit." << std::endl;
+			break; // Exit the loop if the client sent the exit command
+		}
+
+		// Send a response to the client
+		char buffer[MAX_BUFFER_SIZE];
+		std::cout << "Enter the message: ";
+		std::cin.getline(buffer, MAX_BUFFER_SIZE);
+
+		//exit command
+		if (strcmp(buffer, "\\exit") == 0) {
+			break;
+		}
+
+		int sbyteCount = send(acceptSocket, buffer, MAX_BUFFER_SIZE, 0);
+
+		if (sbyteCount == SOCKET_ERROR) {
+			if (DEBUG) {
+				std::cout << "Server send error: " << WSAGetLastError() << std::endl;
+			}
+			return -1;
+		}
+		else {
+			if (DEBUG) {
+				std::cout << "Server: Sent " << sbyteCount << " bytes" << std::endl;
+			}
+		}
 	}
-	else {
-		std::cout << "Server: Sent " << sbyteCount << " bytes" << std::endl;
-	}
+	
 
 }	

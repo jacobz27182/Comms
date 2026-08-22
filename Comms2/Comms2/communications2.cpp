@@ -1,9 +1,11 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <iostream>
+#include <string.h>
 constexpr int PORT = 55555;
 constexpr int MAX_BUFFER_SIZE = 200;
-constexpr char DEST_IP_ADDRESS[] = "127.0.0.1"; // For now lets just use the local host address
+constexpr char DEST_IP_ADDRESS[] = "127.0.0.1"; // For now lets just use the local host address'
+constexpr bool DEBUG = true;
 
 int main() {
 
@@ -19,11 +21,15 @@ int main() {
 
 
 	if (wsaerr != 0) {
-		cout << "The Winsock dll not found!" << std::endl;
+		if (DEBUG) {
+			cout << "The Winsock dll not found!" << std::endl;
+		}
 		return 1;
 	}
 	else {
-		cout << "The Winsock dll found" << std::endl;
+		if (DEBUG) {
+			cout << "The Winsock dll found" << std::endl;
+		}
 	}
 
 	SOCKET clientSocket;
@@ -33,12 +39,16 @@ int main() {
 
 	// Check for socket creation success
 	if (clientSocket == INVALID_SOCKET) {
-		std::cout << "Error at socket(): " << WSAGetLastError() << std::endl;
+		if (DEBUG) {
+			std::cout << "Error at socket(): " << WSAGetLastError() << std::endl;
+		}
 		WSACleanup();
 		return 0;
 	}
 	else {
-		std::cout << "Socket is OK!" << std::endl;
+		if (DEBUG) {
+			std::cout << "Socket is OK!" << std::endl;
+		}
 	}
 
 	// Connect to the server
@@ -50,55 +60,88 @@ int main() {
 	int res = InetPtonA(AF_INET, DEST_IP_ADDRESS, &clientService.sin_addr.s_addr);
 
 	if (res == 0) {
-		std::cout << "Invalid IP address format!" << std::endl;
+		if (DEBUG) {
+			std::cout << "Invalid IP address format!" << std::endl;
+		}
 		WSACleanup();
 		return 0;
 	}
 	else if (res == -1) {
-		std::cout << "InetPton failed: " << WSAGetLastError() << std::endl;
+		if (DEBUG) {
+			std::cout << "InetPton failed: " << WSAGetLastError() << std::endl;
+		}
 		WSACleanup();
 		return 0;
 	}
 	else {
-		std::cout << "IP address is OK!" << std::endl;
+		if (DEBUG) {
+			std::cout << "IP address is OK!" << std::endl;
+		}
 	}
 
 	clientService.sin_port = htons(PORT);  // Choose a port number
 
+	//Connect to server.
 	if (connect(clientSocket, reinterpret_cast<SOCKADDR*>(&clientService), sizeof(clientService)) == SOCKET_ERROR) { 
-		std::cout << "Client: connect() - Failed to connect: " << WSAGetLastError() << std::endl;
+		if (DEBUG) {
+			std::cout << "Client: connect() - Failed to connect: " << WSAGetLastError() << std::endl;
+		}
 		WSACleanup();
 		return 0;
 	}
 	else {
-		std::cout << "Client: Connect() is OK!" << std::endl;
-		std::cout << "Client: Can start sending and receiving data..." << std::endl;
+		if (DEBUG) {
+			std::cout << "Client: Connect() is OK!" << std::endl;
+			std::cout << "Client: Can start sending and receiving data..." << std::endl;
+		}
 	}
 
-	// Sending data to the server
-	char buffer[MAX_BUFFER_SIZE];
+	bool exit_flag = false;
+	while (1) {
+		// Sending data to the server
+		char buffer[MAX_BUFFER_SIZE];
 
-	std::cout << "Enter the message: ";
-	std::cin.getline(buffer, MAX_BUFFER_SIZE);
+		std::cout << "Enter the message: ";
+		std::cin.getline(buffer, MAX_BUFFER_SIZE);
 
-	int sbyteCount = send(clientSocket, buffer, MAX_BUFFER_SIZE, 0);
-	if (sbyteCount == SOCKET_ERROR) {
-		std::cout << "Client send error: " << WSAGetLastError() << std::endl;
-		return -1;
-	}
-	else {
-		std::cout << "Client: Sent " << sbyteCount << " bytes" << std::endl;
+		//exit command
+		if (strcmp(buffer, "\\exit") == 0) {
+			exit_flag = true;
+		}
+
+		int sbyteCount = send(clientSocket, buffer, MAX_BUFFER_SIZE, 0);
+		if (sbyteCount == SOCKET_ERROR) {
+			if (DEBUG) {
+				std::cout << "Client send error: " << WSAGetLastError() << std::endl;
+			}
+			return -1;
+		}
+		else {
+			if (DEBUG) {
+				std::cout << "Client: Sent " << sbyteCount << " bytes" << std::endl;
+			}
+		}
+		
+		if (exit_flag) {
+			break;
+		}
+
+		// Receiving data from the server
+		char receiveBuffer[MAX_BUFFER_SIZE];
+		int rbyteCount = recv(clientSocket, receiveBuffer, MAX_BUFFER_SIZE, 0);
+		if (rbyteCount < 0) {
+			if (DEBUG) {
+				std::cout << "Client recv error: " << WSAGetLastError() << std::endl;
+			}
+			return 0;
+		}
+		else {
+			std::cout << "Client: Received data: " << receiveBuffer << std::endl;
+		}
 	}
 
-	// Receiving data from the server
-	char receiveBuffer[MAX_BUFFER_SIZE];
-	int rbyteCount = recv(clientSocket, receiveBuffer, MAX_BUFFER_SIZE, 0);
-	if (rbyteCount < 0) {
-		std::cout << "Client recv error: " << WSAGetLastError() << std::endl;
-		return 0;
-	}
-	else {
-		std::cout << "Client: Received data: " << receiveBuffer << std::endl;
-	}
+	shutdown(clientSocket, SD_SEND);
+	closesocket(clientSocket);
+	WSACleanup();
 
 }
